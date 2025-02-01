@@ -1,0 +1,90 @@
+version: "3.0"
+rules:
+  - rule: handoff intent from other bot's handoff triggers greeting
+    steps:
+    - intent: handoff
+    - action: utter_greet
+
+  - rule: Ask the user to rephrase whenever they send a message with low NLU confidence
+    steps:
+    - intent: nlu_fallback
+    - action: utter_default
+
+  - rule: answer bot challenge
+    steps:
+    - intent: bot_challenge
+    - action: utter_iamabot
+
+  - rule: start open incident form
+    steps:
+      - or:
+          - intent: open_incident
+          - intent: password_reset
+          - intent: problem_email
+      - action: open_incident_form
+      - active_loop: open_incident_form
+
+  - rule: submit open incident form
+    condition:
+      - active_loop: open_incident_form
+    steps:
+      - action: open_incident_form
+      - active_loop: null
+      - action: action_submit_incident
+
+  - rule: start incident status form
+    steps:
+      - intent: incident_status
+      - action: incident_status_form
+      - active_loop: incident_status_form
+
+  - rule: submit incident status form
+    condition:
+      - active_loop: incident_status_form
+    steps:
+      - action: incident_status_form
+      - active_loop: null
+      - action: action_check_incident_status
+
+  - rule: Activate incident status form for check different ticket
+    steps:
+      - intent: check_different_ticket
+      - action: incident_status_form
+      - active_loop: incident_status_form
+
+  - rule: Reset form on new incident
+    condition:
+      - active_loop: open_incident_form
+    steps:
+      - intent: open_incident
+      - action: action_reset_incident_form
+      - action: open_incident_form
+      - active_loop: open_incident_form
+
+  # - rule: Reset form after incident creation
+  #   steps:
+  #     - intent: open_incident
+  #     - action: action_reset_incident_form
+  #     - action: open_incident_form
+  #     - active_loop: open_incident_form
+
+  - rule: Thank you
+    steps:
+      - intent: thank_you
+      - action: utter_thank_you
+
+  - rule: Say goodbye
+    steps:
+      - intent: goodbye
+      - action: utter_goodbye
+
+  - rule: Greet user anytime
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - action: utter_help
+
+  - rule: Give info anytime
+    steps:
+      - intent: help
+      - action: utter_help

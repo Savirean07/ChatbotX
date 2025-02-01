@@ -1,0 +1,286 @@
+version: "3.0"
+stories:
+
+- story: answer out of scope
+  steps:
+  - intent: out_of_scope
+  - action: utter_out_of_scope
+
+- story: give help
+  steps:
+  - intent: help
+  - action: utter_help
+
+- story: thank
+  steps:
+  - intent: thank
+  - action: utter_welcome
+
+- story: greet + give info
+  steps:
+  - intent: greet
+  - action: utter_greet
+  - action: utter_help
+
+- story: say goodbye
+  steps:
+  - intent: goodbye
+  - action: utter_goodbye
+
+- story: open incident form interrupted
+  steps:
+  - or:
+    - intent: open_incident
+    - intent: password_reset
+    - intent: problem_email
+  - action: open_incident_form
+  - active_loop: open_incident_form
+  - intent: help
+  - action: utter_help
+  - action: open_incident_form
+  - active_loop: null
+  - action: action_submit_incident
+
+- story: open incident form interrupted
+  steps:
+  - or:
+    - intent: open_incident
+    - intent: password_reset
+    - intent: problem_email
+  - action: open_incident_form
+  - active_loop: open_incident_form
+  - intent: out_of_scope
+  - action: utter_out_of_scope
+  - action: open_incident_form
+  - active_loop: null
+  - action: action_submit_incident
+
+- story: incident status form interrupted
+  steps:
+  - intent: incident_status
+  - action: incident_status_form
+  - active_loop: incident_status_form
+  - intent: help
+  - action: utter_help
+  - action: incident_status_form
+  - active_loop: null
+  - action: action_check_incident_status
+
+- story: incident status form interrupted
+  steps:
+  - intent: incident_status
+  - action: incident_status_form
+  - active_loop: incident_status_form
+  - intent: out_of_scope
+  - action: utter_out_of_scope
+  - action: incident_status_form
+  - active_loop: null
+  - action: action_check_incident_status
+
+# - story: incident status form switch to open incident
+#   steps:
+#   - intent: incident_status
+#   - action: incident_status_form
+#   - active_loop: incident_status_form
+#   - or:
+#     - intent: open_incident
+#     - intent: password_reset
+#     - intent: problem_email
+#   - action: open_incident_form
+#   - active_loop: open_incident_form
+#   - active_loop: null
+#   - action: action_open_incident
+
+# - story: open incident form switch to incident status form
+#   steps:
+#   - or:
+#     - intent: open_incident
+#     - intent: password_reset
+#     - intent: problem_email
+#   - action: open_incident_form
+#   - active_loop: open_incident_form
+#   - intent: incident_status
+#   - action: incident_status_form
+#   - active_loop: incident_status_form
+#   - active_loop: null
+#   - action: action_check_incident_status
+
+- story: check different ticket
+  steps:
+  - intent: check_different_ticket
+  - action: incident_status_form
+  - active_loop: incident_status_form
+  - slot_was_set:
+      - requested_slot: ticket_number
+  - intent: inform
+    entities:
+      - ticket_number: "TKT1234567890"
+  - slot_was_set:
+      - ticket_number: "TKT1234567890"
+  - active_loop: null
+  - action: action_check_incident_status
+  - slot_was_set:
+      - ticket_number: null
+
+# - story: check recent ticket
+#   steps:
+#   - intent: check_recent_ticket
+#   - action: action_check_incident_status
+#   - action: utter_check_another
+
+# - story: check recent and then different
+#   steps:
+#   - intent: check_recent_ticket
+#   - action: action_check_incident_status
+#   - action: utter_check_another
+#   - intent: check_different_ticket
+#   - action: incident_status_form
+#   - active_loop: incident_status_form
+#   - slot_was_set:
+#       - requested_slot: ticket_number
+#   - intent: inform
+#     entities:
+#       - ticket_number: "TKT1234567890"
+#   - slot_was_set:
+#       - ticket_number: "TKT1234567890"
+#   - active_loop: null
+#   - action: action_check_incident_status
+#   - slot_was_set:
+#       - ticket_number: null
+
+# - story: initial incident status check
+#   steps:
+#   - intent: incident_status
+#   - action: incident_status_form
+#   - active_loop: incident_status_form
+
+# - story: create new incident after completion
+#   steps:
+#   - intent: open_incident
+#   - action: action_reset_incident_form
+#   - action: open_incident_form
+#   - active_loop: open_incident_form
+#   - slot_was_set:
+#       - requested_slot: email
+#   - intent: inform
+#     entities:
+#       - email: "example@email.com"
+#   - slot_was_set:
+#       - email: "example@email.com"
+#   - slot_was_set:
+#       - requested_slot: priority
+#   - intent: inform
+#     entities:
+#       - priority: "high"
+#   - slot_was_set:
+#       - priority: "high"
+#   - slot_was_set:
+#       - requested_slot: problem_description
+#   - intent: inform
+#     entities:
+#       - problem_description: "test problem"
+#   - slot_was_set:
+#       - problem_description: "test problem"
+#   - slot_was_set:
+#       - requested_slot: incident_title
+#   - intent: inform
+#     entities:
+#       - incident_title: "test title"
+#   - slot_was_set:
+#       - incident_title: "test title"
+#   - slot_was_set:
+#       - requested_slot: confirm
+#   - intent: affirm
+#   - slot_was_set:
+#       - confirm: true
+#   - action: action_submit_incident
+
+- story: thank you flow
+  steps:
+  - intent: thank_you
+  - action: utter_thank_you
+
+- story: goodbye after thank you
+  steps:
+  - intent: thank_you
+  - action: utter_thank_you
+  - intent: goodbye
+  - action: utter_goodbye
+
+- story: help after thank you
+  steps:
+  - intent: thank_you
+  - action: utter_thank_you
+  - intent: help
+  - action: utter_help
+
+- story: greet during incident form
+  steps:
+  - active_loop: open_incident_form
+  - intent: greet
+  - action: utter_greet
+  - action: utter_help
+  - action: open_incident_form
+
+- story: greet during status check
+  steps:
+  - active_loop: incident_status_form
+  - intent: greet
+  - action: utter_greet
+  - action: utter_help
+  - action: incident_status_form
+
+- story: open new incident
+  steps:
+  - intent: open_incident
+  - action: open_incident_form
+  - active_loop: open_incident_form
+  - slot_was_set:
+      - requested_slot: email
+  - intent: inform
+    entities:
+      - email: "example@email.com"
+  - slot_was_set:
+      - email: "example@email.com"
+  - slot_was_set:
+      - requested_slot: priority
+  - intent: inform
+    entities:
+      - priority: "high"
+  - slot_was_set:
+      - priority: "high"
+  - slot_was_set:
+      - requested_slot: problem_description
+  - intent: inform
+    entities:
+      - problem_description: "how to check the role assigned to the employee"
+  - slot_was_set:
+      - problem_description: "how to check the role assigned to the employee"
+  - slot_was_set:
+      - requested_slot: incident_title
+  - intent: inform
+    entities:
+      - incident_title: "Role Assignment Inquiry"
+  - slot_was_set:
+      - incident_title: "Role Assignment Inquiry"
+  - slot_was_set:
+      - requested_slot: confirm
+  - intent: affirm
+  - slot_was_set:
+      - confirm: true
+  - action: action_submit_incident
+
+- story: Fetch user tickets
+  steps:
+    - intent: fetch_user_tickets
+    - action: utter_ask_email
+    - intent: inform
+      entities:
+        - email: "user@example.com"
+    - action: action_fetch_user_tickets
+
+- story: Fetch user tickets by inquiry
+  steps:
+    - intent: inquire_tickets
+    - action: action_fetch_user_tickets
+    - action: utter_send_ticket_data
