@@ -1,0 +1,5 @@
+requests
+python-dotenv
+pyautogen
+langchain
+azure-openai
