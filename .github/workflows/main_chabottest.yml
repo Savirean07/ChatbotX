@@ -26,13 +26,13 @@ jobs:
           source venv/bin/activate
       
       - name: Install dependencies
-        working-directory: OutreachX/helpdesk-assistant
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r OutreachX/helpdesk-assistant/requirements.txt
         
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
-      - name: Zip artifact for deployment (Include `requirements.txt`)
-        run: zip -r release.zip . -x "venv/*" # Exclude venv, but include `requirements.txt`
+      - name: Zip artifact for deployment (Ensure `requirements.txt` is included)
+        run: zip -r release.zip . -x "venv/*" 
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
@@ -40,6 +40,7 @@ jobs:
           name: python-app
           path: |
             release.zip
+            OutreachX/helpdesk-assistant/requirements.txt  # ✅ Ensures `requirements.txt` is included
 
   deploy:
     runs-on: ubuntu-latest
@@ -67,5 +68,5 @@ jobs:
 
       - name: Install dependencies in Azure Web App
         run: |
-          cd OutreachX/helpdesk-assistant
+          cd /home/site/wwwroot/OutreachX/helpdesk-assistant  # ✅ Corrected path
           pip install -r requirements.txt
