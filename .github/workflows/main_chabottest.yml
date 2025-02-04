@@ -1,4 +1,4 @@
-name: Build and deploy Python app to Azure Web App - ChabotTest
+name: Build and Deploy Python App to Azure Web App - ChabotTest
 
 on:
   push:
@@ -27,14 +27,12 @@ jobs:
       
       - name: Install dependencies before deployment
         run: pip install -r OutreachX/helpdesk-assistant/requirements.txt
-        
-      # Optional: Run tests (PyTest, Django test suites, etc.)
 
       - name: Ensure requirements.txt is included in the deployment package
         run: cp OutreachX/helpdesk-assistant/requirements.txt ./  # Copy it to the root directory
 
       - name: Zip artifact for deployment
-        run: zip -r release.zip . -x "venv/*"  # Excludes venv but keeps requirements.txt
+        run: zip -r release.zip . -x "venv/*"
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
@@ -47,7 +45,6 @@ jobs:
     needs: build
     environment:
       name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
       - name: Download artifact from build job
@@ -58,21 +55,17 @@ jobs:
       - name: Unzip artifact for deployment
         run: unzip release.zip
 
-      # ✅ Deploy to Azure Web App using publish-profile authentication
+      # ✅ Use Azure Web App's Built-in Deployment via ZIP Deploy API (No explicit authentication required)
       - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
-        id: deploy-to-webapp
-        with:
-          app-name: 'ChabotTest'
-          slot-name: 'Production'
-          package: .
-          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }} # ✅ Use publish profile for authentication
+        run: |
+          curl -X POST "https://$AZURE_APP_NAME.scm.azurewebsites.net/api/zipdeploy" \
+               --data-binary @release.zip
 
-      # ✅ Ensure requirements.txt is in the correct path
+      # ✅ Ensure files exist in Azure Web App
       - name: Verify files in Azure Web App
         run: ls -la /home/site/wwwroot/
 
-      # ✅ Install dependencies in Azure Web App
+      # ✅ Install dependencies inside Azure Web App (since requirements.txt is copied)
       - name: Install dependencies in Azure Web App
         run: |
           cd /home/site/wwwroot/
