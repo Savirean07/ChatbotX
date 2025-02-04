@@ -26,24 +26,21 @@ jobs:
           source venv/bin/activate
       
       - name: Install dependencies before deployment
-        run: |
-          pip install -r OutreachX/helpdesk-assistant/requirements.txt
+        run: pip install -r OutreachX/helpdesk-assistant/requirements.txt
         
       # Optional: Run tests (PyTest, Django test suites, etc.)
 
-      - name: Ensure `requirements.txt` is included in the deployment package
-        run: cp OutreachX/helpdesk-assistant/requirements.txt ./  # ✅ Copy it to the root directory
+      - name: Ensure requirements.txt is included in the deployment package
+        run: cp OutreachX/helpdesk-assistant/requirements.txt ./  # Copy it to the root directory
 
       - name: Zip artifact for deployment
-        run: zip -r release.zip . -x "venv/*"  # ✅ Ensures venv is excluded but `requirements.txt` is included
+        run: zip -r release.zip . -x "venv/*"  # Excludes venv but keeps requirements.txt
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: |
-            release.zip
-            requirements.txt  # ✅ Ensures `requirements.txt` is uploaded
+          path: release.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -61,13 +58,8 @@ jobs:
       - name: Unzip artifact for deployment
         run: unzip release.zip
 
-      # ✅ Step 1: Log in to Azure before deploying
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      # ✅ Skip Azure Login since running inside Azure
 
-      # ✅ Step 2: Deploy to Azure Web App
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
@@ -76,12 +68,13 @@ jobs:
           slot-name: 'Production'
           package: .
 
-      # ✅ Step 3: Verify files in Azure Web App after deployment
+      # ✅ Ensure requirements.txt is in the correct path
       - name: Verify files in Azure Web App
-        run: ls -la /home/site/wwwroot/  # ✅ Debugging step to check if `requirements.txt` is there
+        run: ls -la /home/site/wwwroot/
 
-      # ✅ Step 4: Install dependencies in Azure Web App
+      # ✅ Install dependencies in Azure Web App
       - name: Install dependencies in Azure Web App
         run: |
           cd /home/site/wwwroot/
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
