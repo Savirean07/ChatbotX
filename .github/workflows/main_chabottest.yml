@@ -58,16 +58,32 @@ jobs:
       # ✅ Deploy using the correct Azure Web App SCM URL
       - name: Deploy to Azure Web App using ZIP Deploy API
         run: |
-          curl -X POST "https://chabottest-h8drbhaugxetbhcw.scm.canadacentral-01.azurewebsites.net/api/zipdeploy" \
-               --data-binary @release.zip
+          response=$(curl -w "%{http_code}" -X POST "https://chabottest-h8drbhaugxetbhcw.scm.canadacentral-01.azurewebsites.net/api/zipdeploy" \
+               --data-binary @release.zip -o response.log)
+          if [[ "$response" -ne 200 && "$response" -ne 202 ]]; then
+            echo "Deployment failed. Check response.log for details."
+            cat response.log
+            exit 1
+          fi
 
-      # ✅ Verify files in Azure Web App after deployment
+      # ✅ Check if the directory exists before running ls
       - name: Verify files in Azure Web App
-        run: ls -la /home/site/wwwroot/
+        run: |
+          if [ -d "/home/site/wwwroot/" ]; then
+            ls -la /home/site/wwwroot/
+          else
+            echo "Directory /home/site/wwwroot/ does not exist. Deployment might have failed."
+            exit 1
+          fi
 
       # ✅ Install dependencies in Azure Web App
       - name: Install dependencies in Azure Web App
         run: |
-          cd /home/site/wwwroot/
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
+          if [ -d "/home/site/wwwroot/" ]; then
+            cd /home/site/wwwroot/
+            python -m pip install --upgrade pip
+            python -m pip install -r requirements.txt
+          else
+            echo "Cannot install dependencies: /home/site/wwwroot/ does not exist."
+            exit 1
+          fi
