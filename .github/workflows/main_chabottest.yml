@@ -55,17 +55,17 @@ jobs:
       - name: Unzip artifact for deployment
         run: unzip release.zip
 
-      # ✅ Directly reference the Web App name (ChabotTest) in the curl command
-      - name: Deploy to Azure Web App using ZIP API
+      # ✅ Explicitly use the app name in the curl command to deploy
+      - name: Deploy to Azure Web App using ZIP Deploy API
         run: |
           curl -X POST "https://ChabotTest.scm.azurewebsites.net/api/zipdeploy" \
                --data-binary @release.zip
 
-      # ✅ Ensure files exist in Azure Web App
+      # ✅ Verify files in Azure Web App after deployment
       - name: Verify files in Azure Web App
         run: ls -la /home/site/wwwroot/
 
-      # ✅ Install dependencies inside Azure Web App (since requirements.txt is copied)
+      # ✅ Install dependencies in Azure Web App
       - name: Install dependencies in Azure Web App
         run: |
           cd /home/site/wwwroot/
