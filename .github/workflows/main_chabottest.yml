@@ -24,6 +24,84 @@ jobs:
         run: |
           python -m venv venv
           source venv/bin/activate
+
+      - name: Install dependencies before deployment
+        run: pip install -r OutreachX/helpdesk-assistant/requirements.txt
+
+      - name: Ensure requirements.txt is included in the deployment package
+        run: cp OutreachX/helpdesk-assistant/requirements.txt ./  # Copy to the root directory
+
+      - name: Zip artifact for deployment
+        run: zip -r release.zip . -x "venv/*"
+
+      - name: Upload artifact for deployment jobs
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-app
+          path: release.zip
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: 'Production'
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: python-app
+
+      - name: Unzip artifact for deployment
+        run: unzip release.zip
+
+      # ✅ Deploy directly using Kudu ZIP Deployment (No Credentials Needed)
+      - name: Deploy using Kudu API
+        run: |
+          echo "Deploying to Azure Web App using Kudu API..."
+          curl -X POST "https://chabottest-h8drbhaugxetbhcw.scm.azurewebsites.net/api/zipdeploy" \
+          --data-binary @release.zip \
+          -H "Content-Type: application/zip" \
+          --fail
+
+      # ✅ Verify files exist after deployment
+      - name: Verify files in Azure Web App
+        run: |
+          echo "Checking /home/site/wwwroot/ directory contents..."
+          ls -la /home/site/wwwroot/
+
+      # ✅ Install dependencies inside the Web App
+      - name: Install dependencies in Azure Web App
+        run: |
+          echo "Installing dependencies..."
+          cd /home/site/wwwroot/
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txtname: Build and Deploy Python App to Azure Web App - ChabotTest
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # Required for actions/checkout
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python version
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+
+      - name: Create and start virtual environment
+        run: |
+          python -m venv venv
+          source venv/bin/activate
       
       - name: Install dependencies before deployment
         run: pip install -r OutreachX/helpdesk-assistant/requirements.txt
