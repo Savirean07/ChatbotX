@@ -55,10 +55,10 @@ jobs:
       - name: Unzip artifact for deployment
         run: unzip release.zip
 
-      # ✅ Explicitly use the app name in the curl command to deploy
+      # ✅ Deploy using the correct Azure Web App SCM URL
       - name: Deploy to Azure Web App using ZIP Deploy API
         run: |
-          curl -X POST "https://ChabotTest.scm.azurewebsites.net/api/zipdeploy" \
+          curl -X POST "https://chabottest-h8drbhaugxetbhcw.scm.canadacentral-01.azurewebsites.net/api/zipdeploy" \
                --data-binary @release.zip
 
       # ✅ Verify files in Azure Web App after deployment
