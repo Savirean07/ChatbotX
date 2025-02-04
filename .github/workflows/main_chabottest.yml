@@ -32,15 +32,13 @@ jobs:
     - name: Run tests
       run: |
         # If you are using pytest or any other test framework, replace with appropriate command
-        echo "Running tests..."  
+        echo "Running tests..."
         # pytest commands can go here, e.g., pytest tests/
 
-    # Deploy to Azure (modify this step based on your specific deployment method)
-    - name: Deploy to Azure
-      run: |
-        # For Azure App Service deployment via GitHub Actions
-        # You can use Azure CLI or Git-based deployment, modify as per your setup
-        echo "Deploying to Azure App Service..."
-        # Example deployment command:
-        # az webapp deployment source config --name YOUR_APP_NAME --resource-group YOUR_RESOURCE_GROUP --src-path YOUR_PROJECT_PATH
-        # Add the actual deployment commands based on your setup
+    # Deploy to Azure App Service using the deploy action
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ secrets.AZURE_APP_NAME }}
+        publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+        package: .
