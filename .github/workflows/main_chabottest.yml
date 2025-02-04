@@ -63,4 +63,11 @@ jobs:
       # ✅ Deploy using Azure CLI and ACR credentials
       - name: Deploy to Azure Web App using ACR Image
         run: |
-          az webapp config container set --name Chabo
+          az webapp config container set --name ChabotTest --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --docker-custom-image-name ${{ secrets.ACR_NAME }}.azurecr.io/your-image:latest --docker-registry-server-url https://${{ secrets.ACR_NAME }}.azurecr.io
+
+      # ✅ Install dependencies in Azure Web App (if necessary)
+      - name: Install dependencies in Azure Web App
+        run: |
+          cd /home/site/wwwroot/
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
