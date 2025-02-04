@@ -25,13 +25,16 @@ jobs:
           python -m venv venv
           source venv/bin/activate
       
-      - name: Install dependencies
+      - name: Install dependencies before deployment
         run: |
           pip install -r OutreachX/helpdesk-assistant/requirements.txt
         
-      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
+      # Optional: Run tests (PyTest, Django test suites, etc.)
 
-      - name: Zip artifact for deployment (Ensure `requirements.txt` is included)
+      - name: Ensure `requirements.txt` is included in the deployment package
+        run: cp OutreachX/helpdesk-assistant/requirements.txt ./  # ✅ Copy it to the root directory
+
+      - name: Zip artifact for deployment
         run: zip -r release.zip . -x "venv/*" 
 
       - name: Upload artifact for deployment jobs
@@ -40,7 +43,7 @@ jobs:
           name: python-app
           path: |
             release.zip
-            OutreachX/helpdesk-assistant/requirements.txt  # ✅ Ensures `requirements.txt` is included
+            requirements.txt  # ✅ Ensure it is uploaded
 
   deploy:
     runs-on: ubuntu-latest
@@ -64,9 +67,12 @@ jobs:
         with:
           app-name: 'ChabotTest'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_CE55EEC55DB54A349536007EC9EFEC0F }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+
+      - name: Verify files in Azure Web App
+        run: ls -la /home/site/wwwroot/  # ✅ Debug to check if `requirements.txt` is there
 
       - name: Install dependencies in Azure Web App
         run: |
-          cd /home/site/wwwroot/OutreachX/helpdesk-assistant  # ✅ Corrected path
+          cd /home/site/wwwroot/
           pip install -r requirements.txt
