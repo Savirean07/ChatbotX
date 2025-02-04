@@ -29,7 +29,7 @@ jobs:
         run: pip install -r OutreachX/helpdesk-assistant/requirements.txt
 
       - name: Ensure requirements.txt is included in the deployment package
-        run: cp OutreachX/helpdesk-assistant/requirements.txt ./  # Copy to the root directory
+        run: cp OutreachX/helpdesk-assistant/requirements.txt ./  # Copy to root directory
 
       - name: Zip artifact for deployment
         run: zip -r release.zip . -x "venv/*"
@@ -55,7 +55,7 @@ jobs:
       - name: Unzip artifact for deployment
         run: unzip release.zip
 
-      # ✅ Deploy directly using Kudu ZIP Deployment (No Credentials Needed)
+      # ✅ Use Azure Web App's Built-in Authentication (No Explicit Credentials)
       - name: Deploy using Kudu API
         run: |
           echo "Deploying to Azure Web App using Kudu API..."
