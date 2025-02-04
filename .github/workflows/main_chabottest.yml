@@ -55,23 +55,12 @@ jobs:
       - name: Unzip artifact for deployment
         run: unzip release.zip
 
-      # ✅ Log in to Azure Container Registry (ACR) with username and password
+      # ✅ Secure Azure Container Registry (ACR) Login
       - name: Azure Login to ACR
         run: |
-          docker login ${{ secrets.ACR_NAME }}.azurecr.io -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
+          echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_NAME }}.azurecr.io -u ${{ secrets.ACR_USERNAME }} --password-stdin
 
       # ✅ Deploy using Azure CLI and ACR credentials
       - name: Deploy to Azure Web App using ACR Image
         run: |
-          az webapp config container set --name ChabotTest --resource-group <your-resource-group> --docker-custom-image-name ${{ secrets.ACR_NAME }}.azurecr.io/your-image:latest --docker-registry-server-url https://${{ secrets.ACR_NAME }}.azurecr.io
-
-      # ✅ Verify deployment
-      - name: Verify files in Azure Web App
-        run: ls -la /home/site/wwwroot/
-
-      # ✅ Install dependencies inside Azure Web App (if necessary)
-      - name: Install dependencies in Azure Web App
-        run: |
-          cd /home/site/wwwroot/
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
+          az webapp config container set --name Chabo
