@@ -58,8 +58,7 @@ jobs:
       - name: Unzip artifact for deployment
         run: unzip release.zip
 
-      # ✅ Skip Azure Login since running inside Azure
-
+      # ✅ Deploy to Azure Web App using publish-profile authentication
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
@@ -67,6 +66,7 @@ jobs:
           app-name: 'ChabotTest'
           slot-name: 'Production'
           package: .
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }} # ✅ Use publish profile for authentication
 
       # ✅ Ensure requirements.txt is in the correct path
       - name: Verify files in Azure Web App
