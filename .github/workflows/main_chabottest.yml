@@ -58,7 +58,7 @@ jobs:
       - name: Unzip artifact
         run: unzip release.zip
 
-      # ✅ Azure Login (Fixed OIDC issue)
+      # ✅ Azure Login using Federated Identity (OIDC)
       - name: Azure Login
         uses: azure/login@v1
         with:
