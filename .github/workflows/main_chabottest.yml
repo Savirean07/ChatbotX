@@ -24,7 +24,7 @@ jobs:
         run: |
           python -m venv venv
           source venv/bin/activate
-      
+
       - name: Install dependencies before deployment
         run: pip install -r OutreachX/helpdesk-assistant/requirements.txt
 
@@ -55,6 +55,12 @@ jobs:
       - name: Unzip artifact for deployment
         run: unzip release.zip
 
+      # ✅ Log in to Azure
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
       # ✅ Log in to Azure Container Registry (ACR) with username and password
       - name: Azure Login to ACR
         run: |
@@ -63,7 +69,11 @@ jobs:
       # ✅ Deploy using Azure CLI and ACR credentials
       - name: Deploy to Azure Web App using ACR Image
         run: |
-          az webapp config container set --name ChabotTest --resource-group <your-resource-group> --docker-custom-image-name ${{ secrets.ACR_NAME }}.azurecr.io/your-image:latest --docker-registry-server-url https://${{ secrets.ACR_NAME }}.azurecr.io
+          az webapp config container set \
+            --name ChabotTest \
+            --resource-group testingrg \
+            --docker-custom-image-name ${{ secrets.ACR_NAME }}.azurecr.io/your-image:latest \
+            --docker-registry-server-url https://${{ secrets.ACR_NAME }}.azurecr.io
 
       # ✅ Verify deployment
       - name: Verify files in Azure Web App
