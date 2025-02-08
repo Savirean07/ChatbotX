@@ -23,23 +23,14 @@ jobs:
         with:
           python-version: '3.8'
 
-      - name: Create and start virtual environment
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-
       - name: Install dependencies
         run: |
           pip install -r OutreachX/helpdesk-assistant/requirements.txt
 
-      - name: Ensure helpdesk-assistant folder is included
-        run: |
-          cp -r OutreachX/helpdesk-assistant ./  
-
       - name: Build Docker image
-        working-directory: ./helpdesk-assistant
+        working-directory: ./OutreachX/helpdesk-assistant
         run: |
-          docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/your-image:latest .
+          docker build -f Dockerfile.chatroom -t ${{ secrets.ACR_NAME }}.azurecr.io/your-image:latest .
 
       - name: Log in to Azure Container Registry (ACR)
         run: |
