@@ -30,15 +30,23 @@ jobs:
       - name: Build Docker image
         working-directory: ./OutreachX/helpdesk-assistant
         run: |
+          # Build the Docker image from Dockerfile.chatroom
           docker build -f Dockerfile.chatroom -t ${{ secrets.ACR_NAME }}.azurecr.io/your-image:latest .
 
       - name: Log in to Azure Container Registry (ACR)
         run: |
+          # Log in to ACR using Azure CLI
           az acr login --name ${{ secrets.ACR_NAME }}
+
+      - name: Tag Docker image for ACR
+        run: |
+          # Tag the built Docker image
+          docker tag ${{ secrets.ACR_NAME }}.azurecr.io/your-image:latest ${{ secrets.ACR_NAME }}.azurecr.io/your-image:${{ github.sha }}
 
       - name: Push Docker image to ACR
         run: |
-          docker push ${{ secrets.ACR_NAME }}.azurecr.io/your-image:latest
+          # Push the tagged Docker image to ACR
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/your-image:${{ github.sha }}
 
       - name: Zip artifact for deployment
         run: zip -r release.zip . -x "venv/*"
@@ -64,7 +72,7 @@ jobs:
       - name: Unzip artifact
         run: unzip release.zip
 
-      # ✅ Azure Login using Federated Identity (OIDC)
+      # Azure Login using Federated Identity (OIDC)
       - name: Azure Login
         uses: azure/login@v1
         with:
@@ -72,22 +80,22 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # ✅ Deploy to Azure Web App
+      # Deploy to Azure Web App
       - name: Deploy helpdesk-assistant to Azure App Service
         run: |
           az webapp config container set \
             --name ChabotTest \
             --resource-group testingrg \
-            --docker-custom-image-name ${{ secrets.ACR_NAME }}.azurecr.io/your-image:latest \
+            --docker-custom-image-name ${{ secrets.ACR_NAME }}.azurecr.io/your-image:${{ github.sha }} \
             --docker-registry-server-url https://${{ secrets.ACR_NAME }}.azurecr.io
 
-      # ✅ Copy helpdesk-assistant folder to wwwroot
+      # Copy helpdesk-assistant folder to wwwroot
       - name: Copy files to Azure App Service
         run: |
           az webapp create-remote-connection --name ChabotTest --resource-group testingrg
           rsync -avz ./helpdesk-assistant/ /home/site/wwwroot/helpdesk-assistant/
 
-      # ✅ Create Virtual Environment on App Service
+      # Setup Virtual Environment and Install Dependencies
       - name: Setup virtual environment on App Service
         run: |
           cd /home/site/wwwroot/helpdesk-assistant
@@ -96,12 +104,12 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      # ✅ Start Duckling for NLP
+      # Start Duckling Server
       - name: Start Duckling Server
         run: |
           docker run -p 8000:8000 rasa/duckling &
 
-      # ✅ Run Rasa API and Actions Server
+      # Start Rasa Services
       - name: Start Rasa Services
         run: |
           cd /home/site/wwwroot/helpdesk-assistant
@@ -109,7 +117,7 @@ jobs:
           rasa run --enable-api --cors "*" &
           rasa run actions --cors "*" &
 
-      # ✅ Restart Web App after deployment
+      # Restart Web App after deployment
       - name: Restart Azure Web App
         run: |
           az webapp restart --name ChabotTest --resource-group testingrg
