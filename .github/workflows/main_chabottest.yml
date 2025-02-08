@@ -13,7 +13,8 @@ jobs:
       contents: read # Required for actions/checkout
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python version
         uses: actions/setup-python@v5
@@ -55,16 +56,18 @@ jobs:
       - name: Unzip artifact for deployment
         run: unzip release.zip
 
-      # ✅ Log in to Azure
+      # ✅ Azure Login using GitHub Secrets
       - name: Azure Login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # ✅ Log in to Azure Container Registry (ACR) with username and password
+      # ✅ Log in to Azure Container Registry (ACR) using secrets
       - name: Azure Login to ACR
         run: |
-          docker login ${{ secrets.ACR_NAME }}.azurecr.io -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
+          az acr login --name ${{ secrets.ACR_NAME }}
 
       # ✅ Deploy using Azure CLI and ACR credentials
       - name: Deploy to Azure Web App using ACR Image
@@ -74,6 +77,11 @@ jobs:
             --resource-group testingrg \
             --docker-custom-image-name ${{ secrets.ACR_NAME }}.azurecr.io/your-image:latest \
             --docker-registry-server-url https://${{ secrets.ACR_NAME }}.azurecr.io
+
+      # ✅ Restart Web App to apply changes
+      - name: Restart Azure Web App
+        run: |
+          az webapp restart --name ChabotTest --resource-group testingrg
 
       # ✅ Verify deployment
       - name: Verify files in Azure Web App
