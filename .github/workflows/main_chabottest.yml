@@ -1,4 +1,4 @@
-name: Build and Deploy Python App to Azure Web App - ChabotTest
+name: Build and Deploy Rasa App to Azure Web App - ChabotTest
 
 on:
   push:
@@ -31,8 +31,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r OutreachX/helpdesk-assistant/requirements.txt
 
-      - name: Ensure requirements.txt is included
-        run: cp OutreachX/helpdesk-assistant/requirements.txt ./  
+      - name: Ensure helpdesk-assistant folder is included
+        run: cp -r OutreachX/helpdesk-assistant ./  
 
       - name: Zip artifact for deployment
         run: zip -r release.zip . -x "venv/*"
@@ -40,7 +40,7 @@ jobs:
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
-          name: python-app
+          name: rasa-app
           path: release.zip
 
   deploy:
@@ -53,7 +53,7 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: python-app
+          name: rasa-app
 
       - name: Unzip artifact
         run: unzip release.zip
@@ -72,13 +72,41 @@ jobs:
           az acr login --name ${{ secrets.ACR_NAME }}
 
       # ✅ Deploy to Azure Web App
-      - name: Deploy to Azure Web App
+      - name: Deploy helpdesk-assistant to Azure App Service
         run: |
           az webapp config container set \
             --name ChabotTest \
             --resource-group testingrg \
             --docker-custom-image-name ${{ secrets.ACR_NAME }}.azurecr.io/your-image:latest \
             --docker-registry-server-url https://${{ secrets.ACR_NAME }}.azurecr.io
+
+      # ✅ Copy helpdesk-assistant folder to wwwroot
+      - name: Copy files to Azure App Service
+        run: |
+          az webapp create-remote-connection --name ChabotTest --resource-group testingrg
+          rsync -avz ./helpdesk-assistant/ /home/site/wwwroot/helpdesk-assistant/
+
+      # ✅ Create Virtual Environment on App Service
+      - name: Setup virtual environment on App Service
+        run: |
+          cd /home/site/wwwroot/helpdesk-assistant
+          python -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # ✅ Start Duckling for NLP
+      - name: Start Duckling Server
+        run: |
+          docker run -p 8000:8000 rasa/duckling &
+
+      # ✅ Run Rasa API and Actions Server
+      - name: Start Rasa Services
+        run: |
+          cd /home/site/wwwroot/helpdesk-assistant
+          source venv/bin/activate
+          rasa run --enable-api --cors "*" &
+          rasa run actions --cors "*" &
 
       # ✅ Restart Web App after deployment
       - name: Restart Azure Web App
