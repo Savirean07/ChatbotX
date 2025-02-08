@@ -29,10 +29,25 @@ jobs:
           source venv/bin/activate
 
       - name: Install dependencies
-        run: pip install -r OutreachX/helpdesk-assistant/requirements.txt
+        run: |
+          pip install -r OutreachX/helpdesk-assistant/requirements.txt
 
       - name: Ensure helpdesk-assistant folder is included
-        run: cp -r OutreachX/helpdesk-assistant ./  
+        run: |
+          cp -r OutreachX/helpdesk-assistant ./  
+
+      - name: Build Docker image
+        working-directory: ./helpdesk-assistant
+        run: |
+          docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/your-image:latest .
+
+      - name: Log in to Azure Container Registry (ACR)
+        run: |
+          az acr login --name ${{ secrets.ACR_NAME }}
+
+      - name: Push Docker image to ACR
+        run: |
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/your-image:latest
 
       - name: Zip artifact for deployment
         run: zip -r release.zip . -x "venv/*"
@@ -65,11 +80,6 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      # ✅ Log in to Azure Container Registry (ACR)
-      - name: Login to Azure Container Registry
-        run: |
-          az acr login --name ${{ secrets.ACR_NAME }}
 
       # ✅ Deploy to Azure Web App
       - name: Deploy helpdesk-assistant to Azure App Service
