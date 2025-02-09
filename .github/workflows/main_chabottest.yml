@@ -77,7 +77,7 @@ jobs:
           az webapp config container set \
             --name ChabotTest \
             --resource-group testingrg \
-            --docker-custom-image-name ${{ secrets.ACR_NAME }}.azurecr.io/your-image:latest \
+            --docker-custom-image-name ${{ secrets.ACR_NAME }}.azurecr.io/rasa:latest \
             --docker-registry-server-url https://${{ secrets.ACR_NAME }}.azurecr.io
 
       # ✅ Restart Web App after deployment
