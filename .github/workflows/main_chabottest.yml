@@ -1,4 +1,4 @@
-name: Build and Deploy Rasa App to Azure Web App - ChabotTest
+name: Build and Deploy Python App to Azure Web App - ChabotTest
 
 on:
   push:
@@ -23,34 +23,16 @@ jobs:
         with:
           python-version: '3.8'
 
+      - name: Create and start virtual environment
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+
       - name: Install dependencies
-        run: |
-          pip install -r OutreachX/helpdesk-assistant/requirements.txt
+        run: pip install -r OutreachX/helpdesk-assistant/requirements.txt
 
-      - name: Build Docker image
-        working-directory: ./OutreachX/helpdesk-assistant
-        run: |
-          docker build -f Dockerfile.chatroom -t ${{ secrets.ACR_NAME }}.azurecr.io/your-image:latest .
-
-      - name: Log in to Azure (via Service Principal)
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          auth-type: "ServicePrincipal"
-
-      - name: Log in to Azure Container Registry (ACR)
-        run: |
-          az acr login --name ${{ secrets.ACR_NAME }}
-
-      - name: Tag Docker image for ACR
-        run: |
-          docker tag ${{ secrets.ACR_NAME }}.azurecr.io/your-image:latest ${{ secrets.ACR_NAME }}.azurecr.io/your-image:${{ github.sha }}
-
-      - name: Push Docker image to ACR
-        run: |
-          docker push ${{ secrets.ACR_NAME }}.azurecr.io/your-image:${{ github.sha }}
+      - name: Ensure requirements.txt is included
+        run: cp OutreachX/helpdesk-assistant/requirements.txt ./  
 
       - name: Zip artifact for deployment
         run: zip -r release.zip . -x "venv/*"
@@ -58,7 +40,7 @@ jobs:
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
-          name: rasa-app
+          name: python-app
           path: release.zip
 
   deploy:
@@ -71,12 +53,12 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: rasa-app
+          name: python-app
 
       - name: Unzip artifact
         run: unzip release.zip
 
-      # Azure Login using Federated Identity (OIDC)
+      # ✅ Azure Login using Federated Identity (OIDC)
       - name: Azure Login
         uses: azure/login@v1
         with:
@@ -84,44 +66,21 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # Deploy to Azure Web App
-      - name: Deploy helpdesk-assistant to Azure App Service
+      # ✅ Log in to Azure Container Registry (ACR)
+      - name: Login to Azure Container Registry
+        run: |
+          az acr login --name ${{ secrets.ACR_NAME }}
+
+      # ✅ Deploy to Azure Web App
+      - name: Deploy to Azure Web App
         run: |
           az webapp config container set \
             --name ChabotTest \
             --resource-group testingrg \
-            --docker-custom-image-name ${{ secrets.ACR_NAME }}.azurecr.io/your-image:${{ github.sha }} \
+            --docker-custom-image-name ${{ secrets.ACR_NAME }}.azurecr.io/your-image:latest \
             --docker-registry-server-url https://${{ secrets.ACR_NAME }}.azurecr.io
 
-      # Copy helpdesk-assistant folder to wwwroot
-      - name: Copy files to Azure App Service
-        run: |
-          az webapp create-remote-connection --name ChabotTest --resource-group testingrg
-          rsync -avz ./helpdesk-assistant/ /home/site/wwwroot/helpdesk-assistant/
-
-      # Setup Virtual Environment and Install Dependencies
-      - name: Setup virtual environment on App Service
-        run: |
-          cd /home/site/wwwroot/helpdesk-assistant
-          python -m venv venv
-          source venv/bin/activate
-          pip install --upgrade pip
-          pip install -r requirements.txt
-
-      # Start Duckling Server
-      - name: Start Duckling Server
-        run: |
-          docker run -p 8000:8000 rasa/duckling &
-
-      # Start Rasa Services
-      - name: Start Rasa Services
-        run: |
-          cd /home/site/wwwroot/helpdesk-assistant
-          source venv/bin/activate
-          rasa run --enable-api --cors "*" &
-          rasa run actions --cors "*" &
-
-      # Restart Web App after deployment
+      # ✅ Restart Web App after deployment
       - name: Restart Azure Web App
         run: |
           az webapp restart --name ChabotTest --resource-group testingrg
